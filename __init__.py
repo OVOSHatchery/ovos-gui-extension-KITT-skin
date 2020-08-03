@@ -4,29 +4,30 @@ from os.path import join, dirname
 
 
 class KittSkinSkill(MycroftSkill):
+    def __init__(self):
+        super().__init__("KITT Skin")
+        self.gui_busy = False
+
     def initialize(self):
+
+        # TODO blacklist mark2 skill since it conflicts
         self.register_gui_handlers()
 
-    def register_gui_handlers(self):
-        self.add_event('enclosure.mouth.think', self.handle_think)
+    def handle_gui_status(self, message):
+        # detect if some other skill is displaying stuff
+        if 'KITT-skin' not in message.data.get('__from', ''):
+            self.gui_busy = True
 
-        # speak animation
+    def register_gui_handlers(self):
+        self.add_event('gui.page.show', self.handle_gui_status)
+
         self.add_event('recognizer_loop:audio_output_start',
                        self.handle_speak_start)
-        self.add_event('enclosure.mouth.talk', self.handle_speak_start)
-        self.add_event('recognizer_loop:audio_output_end',
-                       self.handle_reset)
-
-        # listen
         self.add_event('recognizer_loop:record_begin', self.handle_listen)
-        self.add_event('enclosure.mouth.listen', self.handle_listen)
-        self.add_event('recognizer_loop:record_end', self.handle_reset)
 
-        # clear gui
-        self.add_event("mycroft.skill.handler.complete",
-                       self.idle)
-        self.add_event('enclosure.mouth.reset',
-                       self.handle_reset)
+        self.add_event('recognizer_loop:audio_output_end', self.handle_idle)
+        self.add_event('recognizer_loop:record_end', self.handle_idle)
+        self.add_event("mycroft.skill.handler.complete", self.handle_idle)
 
         # TODO: Register handlers for standard (Mark 1) events
         # self.add_event('enclosure.eyes.on', self.on)
@@ -45,23 +46,38 @@ class KittSkinSkill(MycroftSkill):
 
         # self.add_event('enclosure.mouth.smile', self.smile)
         # self.add_event('enclosure.mouth.viseme', self.viseme)
+        self.add_event('enclosure.mouth.reset',
+                       self.handle_reset)
+        self.add_event('enclosure.mouth.think', self.handle_think)
+        self.add_event('enclosure.mouth.talk', self.handle_speak_start)
+        self.add_event('enclosure.mouth.listen', self.handle_listen)
 
     @resting_screen_handler("KITT")
     def idle(self, message=None):
-        # TODO blacklist mark2 skill since it conflicts
+        self.gui_busy = False
+        self.gui.clear()
         self.gui.show_animated_image(join(dirname(__file__),
                                           "ui", "idle.gif"),
                                      override_idle=True)
 
     def handle_speak_start(self, message=None):
+        if self.gui_busy:
+            return
         self.gui.show_animated_image(join(dirname(__file__),
                                           "ui", "speak.gif"),
                                      override_idle=True)
 
+    def handle_idle(self, message=None):
+        if self.gui_busy:
+            return
+        self.idle()
+
     def handle_reset(self, message=None):
         self.gui.clear()
+        self.gui_busy = False
 
     def handle_listen(self):
+        self.handle_reset()
         self.gui.show_animated_image(join(dirname(__file__),
                                           "ui", "listening.gif"),
                                      override_idle=True)
@@ -72,9 +88,8 @@ class KittSkinSkill(MycroftSkill):
                                      override_idle=True)
 
     def stop(self):
-        self.handle_reset()
+        self.idle()
 
 
 def create_skill():
     return KittSkinSkill()
-
