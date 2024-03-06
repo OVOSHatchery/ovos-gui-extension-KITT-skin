@@ -1,16 +1,13 @@
-from mycroft import MycroftSkill, intent_file_handler
-from mycroft.skills.core import resting_screen_handler
 from os.path import join, dirname
 
+from ovos_workshop.decorators import resting_screen_handler
+from ovos_workshop.skills import OVOSSkill
 
-class KittSkinSkill(MycroftSkill):
-    def __init__(self):
-        super().__init__("KITT Skin")
-        self.gui_busy = False
+
+class KittSkinSkill(OVOSSkill):
 
     def initialize(self):
-
-        # TODO blacklist mark2 skill since it conflicts
+        self.gui_busy = False
         self.register_gui_handlers()
 
     def handle_gui_status(self, message):
@@ -46,8 +43,7 @@ class KittSkinSkill(MycroftSkill):
 
         # self.add_event('enclosure.mouth.smile', self.smile)
         # self.add_event('enclosure.mouth.viseme', self.viseme)
-        self.add_event('enclosure.mouth.reset',
-                       self.handle_reset)
+        self.add_event('enclosure.mouth.reset', self.handle_reset)
         self.add_event('enclosure.mouth.think', self.handle_think)
         self.add_event('enclosure.mouth.talk', self.handle_speak_start)
         self.add_event('enclosure.mouth.listen', self.handle_listen)
@@ -56,15 +52,14 @@ class KittSkinSkill(MycroftSkill):
     def idle(self, message=None):
         self.gui_busy = False
         self.gui.clear()
-        self.gui.show_animated_image(join(dirname(__file__),
-                                          "ui", "idle.gif"),
+        self.gui.show_animated_image(join(dirname(__file__), "ui", "idle.gif"),
                                      override_idle=True)
 
     def handle_speak_start(self, message=None):
         if self.gui_busy:
             return
-        self.gui.show_animated_image(join(dirname(__file__),
-                                          "ui", "speak.gif"),
+        self.gui.show_animated_image(join(dirname(__file__), "ui",
+                                          "speak.gif"),
                                      override_idle=True)
 
     def handle_idle(self, message=None):
@@ -78,18 +73,14 @@ class KittSkinSkill(MycroftSkill):
 
     def handle_listen(self):
         self.handle_reset()
-        self.gui.show_animated_image(join(dirname(__file__),
-                                          "ui", "listening.gif"),
+        self.gui.show_animated_image(join(dirname(__file__), "ui",
+                                          "listening.gif"),
                                      override_idle=True)
 
     def handle_think(self, message=None):
-        self.gui.show_animated_image(join(dirname(__file__),
-                                          "ui", "think.gif"),
+        self.gui.show_animated_image(join(dirname(__file__), "ui",
+                                          "think.gif"),
                                      override_idle=True)
 
     def stop(self):
         self.idle()
-
-
-def create_skill():
-    return KittSkinSkill()
